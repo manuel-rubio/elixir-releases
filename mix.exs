@@ -24,7 +24,7 @@ defmodule Cuatro.Mixfile do
     [
       {:jason, "~> 1.1"},
       {:cowboy, "~> 2.5"},
-      {:distillery, github: "heymackey/distillery", branch: "elixir1.9"}
+      {:distillery, "~> 2.0"},
     ]
   end
 
