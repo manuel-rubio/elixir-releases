@@ -193,6 +193,10 @@ defmodule Cuatro.Juego do
 
   @impl true
   def code_change(_old_vsn, tablero, _extra) do
+    Enum.each [{Registry, [keys: :unique, name: Cuatro.Registry]},
+               {Cuatro.Http, [port, family]}],
+              &(Supervisor.start_child Cuatro.Supervisor, &1)
+
     Registry.register Cuatro.Registry, "legacy", nil
     {:ok, tablero}
   end
