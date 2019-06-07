@@ -1,7 +1,7 @@
 defmodule Cuatro.Juego do
   use GenServer
 
-  @vsn 1
+  @vsn 2
 
   @moduledoc """
   El  juego de Conecta Cuatro es un juego donde dos
@@ -32,48 +32,55 @@ defmodule Cuatro.Juego do
   @max_x 7
   @max_y 6
 
-  @doc "Inicia el juego"
-  def start_link([]) do
-    GenServer.start_link __MODULE__, [], name: __MODULE__
+  defp via(juego) do
+    {:via, Registry, {Cuatro.Registry, juego}}
   end
 
-  def stop do
-    GenServer.stop __MODULE__
+  @doc "Inicia el juego"
+  def start_link(juego) do
+    GenServer.start_link __MODULE__, [], name: via(juego)
+  end
+
+  def stop(juego) do
+    GenServer.stop via(juego)
   end
 
   @doc "Retorna información de quién es el siguiente"
-  def who_plays? do
-    GenServer.call __MODULE__, :quien_juega
+  def who_plays?(juego) do
+    GenServer.call via(juego), :quien_juega
   end
 
-  def who_am_i? do
-    GenServer.call __MODULE__, :quien_soy
+  def who_am_i?(juego) do
+    GenServer.call via(juego), :quien_soy
   end
 
-  def who_wins? do
-    GenServer.call __MODULE__, :quien_gana
+  def who_wins?(juego) do
+    GenServer.call via(juego), :quien_gana
   end
 
-  def sign_me_up do
-    GenServer.call __MODULE__, {:jugador, self()}
+  def sign_me_up(juego) do
+    GenServer.call via(juego), {:jugador, self()}
   end
 
-  def exists? do
-    is_pid(Process.whereis(__MODULE__))
+  def exists?(juego) do
+    case Registry.lookup(Cuatro.Registry, juego) do
+      [{_pid, nil}] -> true
+      [] -> false
+    end
   end
 
   @doc "Inserta una ficha en el tablero"
-  def insert(col) when is_integer(col) and col >= 0 do
-    GenServer.call __MODULE__, {:col, col}
+  def insert(juego, col) when is_integer(col) and col >= 0 do
+    GenServer.call via(juego), {:col, col}
   end
 
-  def players do
-    GenServer.call __MODULE__, :jugadores
+  def players(juego) do
+    GenServer.call via(juego), :jugadores
   end
 
   @doc "Muestra las columnas"
-  def show do
-    GenServer.call __MODULE__, :muestra
+  def show(juego) do
+    GenServer.call via(juego), :muestra
   end
 
   @impl true
@@ -182,6 +189,12 @@ defmodule Cuatro.Juego do
     cols = tablero.cols
            |> Enum.map(&normaliza/1)
     {:reply, cols, tablero}
+  end
+
+  @impl true
+  def code_change(_old_vsn, tablero, _extra) do
+    Registry.register Cuatro.Registry, "legacy", nil
+    {:ok, tablero}
   end
 
   defp juega(ix, tablero) do

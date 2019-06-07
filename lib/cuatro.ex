@@ -25,7 +25,7 @@ defmodule Cuatro do
   @msg_playing_as "playing as"
 
   defp show_all do
-    Juego.players()
+    Juego.players(__MODULE__)
     |> Enum.each(fn(jugador) ->
                    info = Process.info(jugador)
                    show(info[:group_leader])
@@ -42,16 +42,16 @@ defmodule Cuatro do
        ganado muestra el tablero y detiene el juego.
        """
   def move(col) do
-    case Juego.insert(col) do
+    case Juego.insert(__MODULE__, col) do
       {:gana, quien} ->
         [ganador, perdedor] = case quien do
-          @player1 -> Juego.players()
-          @player2 -> Enum.reverse Juego.players()
+          @player1 -> Juego.players(__MODULE__)
+          @player2 -> Enum.reverse Juego.players(__MODULE__)
         end
         show_all()
         show_to ganador, @msg_winner
         show_to perdedor, @msg_looser
-        Juego.stop
+        Juego.stop(__MODULE__)
       :esperando_jugadores ->
         IO.puts @msg_waiting
       :sigue ->
@@ -69,7 +69,7 @@ defmodule Cuatro do
   defp color(@player2), do: @player2_color
 
   def sign_me_up do
-    case Juego.sign_me_up() do
+    case Juego.sign_me_up(__MODULE__) do
       :partida_ocupada ->
         IO.puts @msg_err_busy
       jugador ->
@@ -95,7 +95,7 @@ defmodule Cuatro do
 
   @doc "Muestra el tablero"
   def show(device \\ :stdio) do
-    cols = Juego.show()
+    cols = Juego.show(__MODULE__)
     imprime = &(IO.puts(device, &1))
 
     cols
