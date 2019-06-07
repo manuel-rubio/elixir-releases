@@ -20,6 +20,8 @@ defmodule Cuatro.Mixfile do
   end
 
   defp deps do
-    []
+    [
+      {:distillery, github: "heymackey/distillery", branch: "elixir1.9"}
+    ]
   end
 end

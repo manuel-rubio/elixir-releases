@@ -115,7 +115,7 @@ defmodule Cuatro.Juego do
     {:reply, tablero.ganador, tablero}
   end
 
-  def handle_call(:quien_soy, {pid, _} = from, tablero) do
+  def handle_call(:quien_soy, {pid, _} = _from, tablero) do
     reply = case tablero.jugadores do
       {^pid, _} -> 0;
       {_, ^pid} -> 1
