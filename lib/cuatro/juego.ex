@@ -40,6 +40,14 @@ defmodule Cuatro.Juego do
   def start_link(juego) do
     GenServer.start_link __MODULE__, [], name: via(juego)
   end
+  def start_link do
+    # FIXME: this is only to be in use when the 1.0.0 process dies.
+    spawn(fn ->
+      Supervisor.terminate_child Cuatro.Supervisor, Cuatro.Juego
+      Supervisor.delete_child Cuatro.Supervisor, Cuatro.Juego
+    end)
+    ignore
+  end
 
   def stop(juego) do
     GenServer.stop via(juego)
