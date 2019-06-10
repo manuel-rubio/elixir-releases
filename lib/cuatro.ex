@@ -1,6 +1,6 @@
 defmodule Cuatro do
   require Logger
-  alias Cuatro.Juego
+  alias Cuatro.{Juego, HiScore}
 
   @player1 0
   @player2 1
@@ -111,6 +111,16 @@ defmodule Cuatro do
       do: if(i<10, do: " #{i} ", else: "#{i} "))
     |> Enum.join()
     |> imprime.()
+  end
+
+  def top_list do
+    top_list = HiScore.top_list()
+    :io.format("~-20s Points\n", ["Name"])
+    IO.puts(String.duplicate("-", 20) <> " " <> String.duplicate("-", 6))
+    for hscore <- top_list do
+      :io_lib.format("~-20s ~6b\n", [hscore.name, hscore.score])
+    end
+    |> IO.puts()
   end
 
 end

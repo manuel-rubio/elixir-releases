@@ -1,7 +1,7 @@
 defmodule Cuatro.Juego do
   use GenServer
 
-  @vsn 2
+  @vsn 3
 
   @moduledoc """
   El  juego de Conecta Cuatro es un juego donde dos
@@ -25,6 +25,7 @@ defmodule Cuatro.Juego do
   end
 
   alias Cuatro.Juego.Tablero
+  alias Cuatro.HiScore
 
   @jugador1 0
   @jugador2 1
@@ -58,8 +59,8 @@ defmodule Cuatro.Juego do
     GenServer.call via(juego), :quien_gana
   end
 
-  def sign_me_up(juego) do
-    GenServer.call via(juego), {:jugador, self()}
+  def sign_me_up(juego, jugador \\ nil) do
+    GenServer.call via(juego), {:jugador, self(), jugador}
   end
 
   def exists?(juego) do
@@ -93,10 +94,10 @@ defmodule Cuatro.Juego do
   defp cambia_turno(@jugador1), do: @jugador2
   defp cambia_turno(@jugador2), do: @jugador1
 
-  defp agrega_jugador(tablero, id) do
+  defp agrega_jugador(tablero, id, name) do
     jugadores = case tablero.jugadores do
-      {nil, id2} -> {id, id2}
-      {id2, nil} -> {id2, id}
+      {nil, id2} -> {{id, name || "Rojo"}, id2}
+      {id2, nil} -> {id2, {id, name || "Amarillo"}}
     end
     num_jugadores = tablero.num_jugadores + 1
     %Tablero{tablero | jugadores: jugadores,
@@ -108,10 +109,10 @@ defmodule Cuatro.Juego do
                   tablero) do
     num = tablero.num_jugadores - 1
     case tablero.jugadores do
-      {^id, id2} ->
+      {{^id, _}, id2} ->
         {:noreply, %Tablero{tablero | jugadores: {nil, id2},
                                       num_jugadores: num}}
-      {id2, ^id} ->
+      {id2, {^id, _}} ->
         {:noreply, %Tablero{tablero | jugadores: {id2, nil},
                                       num_jugadores: num}}
     end
@@ -124,8 +125,8 @@ defmodule Cuatro.Juego do
 
   def handle_call(:quien_soy, {pid, _} = _from, tablero) do
     reply = case tablero.jugadores do
-      {^pid, _} -> 0;
-      {_, ^pid} -> 1
+      {{^pid, _}, _} -> 0;
+      {_, {^pid, _}} -> 1
       {nil, nil} -> :esperando_jugadores
     end
     {:reply, reply, tablero}
@@ -133,19 +134,20 @@ defmodule Cuatro.Juego do
 
   @impl true
   def handle_call(:jugadores, _from, tablero) do
-    {:reply, Tuple.to_list(tablero.jugadores), tablero}
+    {jugador1, jugador2} = tablero.jugadores
+    {:reply, [get_player_id(jugador1), get_player_id(jugador2)], tablero}
   end
 
   @impl true
-  def handle_call({:jugador, id}, _from, tablero) do
+  def handle_call({:jugador, id, name}, _from, tablero) do
     Process.monitor id
     case tablero.jugadores do
-      {_, ^id} -> {:reply, @jugador1, tablero}
-      {^id, _} -> {:reply, @jugador2, tablero}
+      {_, {^id, _}} -> {:reply, @jugador1, tablero}
+      {{^id, _}, _} -> {:reply, @jugador2, tablero}
       {nil, _} ->
-          {:reply, @jugador1, agrega_jugador(tablero, id)}
+          {:reply, @jugador1, agrega_jugador(tablero, id, name)}
       {_, nil} ->
-          {:reply, @jugador2, agrega_jugador(tablero, id)}
+          {:reply, @jugador2, agrega_jugador(tablero, id, name)}
       _ ->
           {:reply, :partida_ocupada, tablero}
     end
@@ -165,7 +167,7 @@ defmodule Cuatro.Juego do
 
   @impl true
   def handle_call({:col, ix}, {pid, _},
-                  %Tablero{jugadores: {_, pid},
+                  %Tablero{jugadores: {_, {pid, _}},
                            turno: @jugador2} = tablero)
                     when ix >= 0 and ix < @max_x do
     juega(ix, tablero)
@@ -173,7 +175,7 @@ defmodule Cuatro.Juego do
 
   @impl true
   def handle_call({:col, ix}, {pid, _},
-                  %Tablero{jugadores: {pid, _},
+                  %Tablero{jugadores: {{pid, _}, _},
                            turno: @jugador1} = tablero)
                     when ix >= 0 and ix < @max_x do
     juega(ix, tablero)
@@ -192,12 +194,37 @@ defmodule Cuatro.Juego do
   end
 
   @impl true
-  def code_change(_old_vsn, tablero, _extra) do
+  def code_change(2, %Tablero{jugadores: {pid1, pid2}} = tablero, _extra) do
+    pid1 = case pid1 do
+      nil -> nil
+      _ -> {pid1, "Rojo"}
+    end
+    pid2 = case pid2 do
+      nil -> nil
+      _ -> {pid2, "Amarillo"}
+    end
+    {:ok, %Tablero{tablero | jugadores: {pid1, pid2}}}
+  end
+  def code_change(1, tablero, _extra) do
     Enum.each Cuatro.Application.children(),
               &(Supervisor.start_child Cuatro.Supervisor, &1)
 
     Registry.register Cuatro.Registry, "legacy", nil
     {:ok, tablero}
+  end
+
+  defp get_player_id({id, _}), do: id
+  defp get_player_id(nil), do: nil
+
+  defp add_score(%Tablero{jugadores: {{_, name1}, {_, name2}}}, 1) do
+    HiScore.add_score_for name1, 1
+    HiScore.add_score_for name2, 1
+  end
+  defp add_score(%Tablero{turno: 0, jugadores: {{_, name}, _}}, 2) do
+    HiScore.add_score_for name, 2
+  end
+  defp add_score(%Tablero{turno: 1, jugadores: {_, {_, name}}}, 2) do
+    HiScore.add_score_for name, 2
   end
 
   defp juega(ix, tablero) do
@@ -207,10 +234,12 @@ defmodule Cuatro.Juego do
       cols = List.replace_at(tablero.cols, ix, col)
       tablero = %Tablero{tablero | cols: cols}
       if gana?(tablero) do
+        add_score(tablero, 2)
         {:reply, {:gana, tablero.turno},
                  %Tablero{tablero | ganador: tablero.turno}}
       else
         if lleno?(tablero) do
+          add_score(tablero, 1)
           {:reply, :lleno, tablero}
         else
           turno = cambia_turno(tablero.turno)

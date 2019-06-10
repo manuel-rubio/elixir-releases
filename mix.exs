@@ -4,7 +4,7 @@ defmodule Cuatro.Mixfile do
   def project do
     [
       app: :cuatro,
-      version: "2.0.0",
+      version: "3.0.0",
       elixir: "~> 1.7",
       elixirc_paths: ["lib"],
       start_permanent: true,
@@ -16,7 +16,7 @@ defmodule Cuatro.Mixfile do
   def application do
     [
       mod: {Cuatro.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      extra_applications: [:logger, :runtime_tools, :mnesia]
     ]
   end
 
@@ -25,6 +25,8 @@ defmodule Cuatro.Mixfile do
       {:jason, "~> 1.1"},
       {:cowboy, "~> 2.5"},
       {:distillery, "~> 2.0"},
+      {:ecto_boot_migration, "~> 0.1.1"},
+      {:ecto_mnesia, "~> 0.9.1"},
     ]
   end
 
