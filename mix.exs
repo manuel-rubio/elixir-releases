@@ -34,7 +34,7 @@ defmodule Cuatro.Mixfile do
 
   def release_copy(_) do
     File.mkdir "releases/#{project()[:version]}"
-    "_build/dev/rel/cuatro/releases/*/*.tar.gz"
+    "_build/prod/rel/cuatro/releases/*/*.tar.gz"
     |> Path.wildcard()
     |> Enum.each(fn(file) ->
                    [dir, f] = file
