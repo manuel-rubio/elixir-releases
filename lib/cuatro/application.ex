@@ -2,21 +2,16 @@ defmodule Cuatro.Application do
   use Application
   require Logger
 
-  @port 1234
-  @family :inet
-
   def children do
     import Supervisor.Spec
 
-    port = Application.get_env(:cuatro, :port, @port)
-    family = Application.get_env(:cuatro, :family, @family)
-
     [{Registry, [keys: :unique, name: Cuatro.Registry]},
-     {Cuatro.Http, [port, family]},
+     {Cuatro.Http, []},
      {DynamicSupervisor, strategy: :one_for_one, name: Cuatro.Juegos},
      supervisor(Cuatro.Repo, [])]
   end
 
+  @impl true
   def start(_type, _args) do
     ensure_database_is_up()
     {:ok, _} = EctoBootMigration.migrate(:cuatro)
@@ -25,6 +20,15 @@ defmodule Cuatro.Application do
 
     opts = [strategy: :one_for_one, name: Cuatro.Supervisor]
     Supervisor.start_link(children(), opts)
+  end
+
+  @impl true
+  def config_change(changed, new, removed) do
+    if port = changed[:port] do
+      Supervisor.terminate_child Cuatro.Supervisor, Cuatro.Http
+      :cowboy.stop_listener Cuatro.Http
+      Supervisor.restart_child Cuatro.Supervisor, Cuatro.Http
+    end
   end
 
   defp ensure_database_is_up do
