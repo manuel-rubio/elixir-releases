@@ -71,6 +71,9 @@ defmodule Cuatro do
   defp color(@player2), do: @player2_color
 
   def sign_me_up do
+    if not Juego.exists?(@legacy_game_name) do
+      Juego.start(@legacy_game_name)
+    end
     case Juego.sign_me_up(@legacy_game_name) do
       :partida_ocupada ->
         IO.puts @msg_err_busy

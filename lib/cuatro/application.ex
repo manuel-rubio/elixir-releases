@@ -13,6 +13,7 @@ defmodule Cuatro.Application do
 
     [{Registry, [keys: :unique, name: Cuatro.Registry]},
      {Cuatro.Http, [port, family]},
+     {DynamicSupervisor, strategy: :one_for_one, name: Cuatro.Juegos},
      supervisor(Cuatro.Repo, [])]
   end
 
