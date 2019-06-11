@@ -10,7 +10,8 @@ defmodule Cuatro.Application do
     family = Application.get_env(:cuatro, :family, @family)
 
     [{Registry, [keys: :unique, name: Cuatro.Registry]},
-     {Cuatro.Http, [port, family]}]
+     {Cuatro.Http, [port, family]},
+     {DynamicSupervisor, strategy: :one_for_one, name: Cuatro.Juegos}]
   end
 
   def start(_type, _args) do

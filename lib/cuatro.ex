@@ -72,7 +72,7 @@ defmodule Cuatro do
 
   def sign_me_up do
     if not Juego.exists?(@legacy_game_name) do
-      Juego.start_link(@legacy_game_name)
+      Juego.start(@legacy_game_name)
     end
     case Juego.sign_me_up(@legacy_game_name) do
       :partida_ocupada ->

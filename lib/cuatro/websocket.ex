@@ -127,7 +127,7 @@ defmodule Cuatro.Websocket do
   defp process_data(%{"type" => "login", "juego" => juego},
                     state) do
     unless Juego.exists?(juego) do
-      Juego.start_link juego
+      Juego.start juego
     end
     case Juego.sign_me_up(juego) do
       :partida_ocupada ->

@@ -49,6 +49,10 @@ defmodule Cuatro.Juego do
     GenServer.start_link __MODULE__, [], name: via(juego)
   end
 
+  def start(juego) do
+    DynamicSupervisor.start_child Cuatro.Juegos, {__MODULE__, juego}
+  end
+
   def stop(juego) do
     GenServer.stop via(juego)
   end
