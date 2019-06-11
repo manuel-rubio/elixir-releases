@@ -18,6 +18,7 @@ defmodule Cuatro.Application do
   end
 
   def start(_type, _args) do
+    ensure_database_is_up()
     {:ok, _} = EctoBootMigration.migrate(:cuatro)
 
     Logger.info "[app] app initiated"
@@ -26,22 +27,16 @@ defmodule Cuatro.Application do
     Supervisor.start_link(children(), opts)
   end
 
-  def upgrade do
-    IO.puts "==> Updating supervisor (add Cuatro.Repo)"
-    Supervisor.start_child Cuatro.Supervisor,
-                           Supervisor.Spec.supervisor(Cuatro.Repo, [])
-
+  defp ensure_database_is_up do
     # Config environment
     System.put_env "MNESIA_HOST", to_string(node())
     File.mkdir_p! Application.get_env(:mnesia, :dir)
-    
-    # Create database
-    IO.puts "==> Updating database (create database) #{node()}"
-    Cuatro.Repo.__adapter__.storage_down(Cuatro.Repo.config())
-    Cuatro.Repo.__adapter__.storage_up(Cuatro.Repo.config())
 
-    # Run migrations
-    IO.puts "==> Running Migrations"
-    {:ok, _} = EctoBootMigration.migrate(:cuatro)
+    # Create database
+    Cuatro.Repo.__adapter__.storage_up(Cuatro.Repo.config())
+  end
+
+  def upgrade do
+    File.cp! "lib/cuatro-4.0.0/priv/config.toml", "priv/config.toml"
   end
 end

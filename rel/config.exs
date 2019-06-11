@@ -54,5 +54,7 @@ release :cuatro do
   set applications: [
     :runtime_tools
   ]
+  set config_providers: [
+    {Toml.Provider, [path: "priv/config.toml", transforms: [Cuatro.Transform]]}
+  ]
 end
-

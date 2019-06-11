@@ -1,0 +1,8 @@
+{"4.0.0",
+ [{"3.0.0",
+   [{add_module,'Elixir.Cuatro.Transform'},
+    {load_module,'Elixir.Cuatro.Application',[]},
+    {apply, {'Elixir.Cuatro.Application', upgrade, []}}]}],
+ [{"3.0.0",
+   [{delete_module,'Elixir.Cuatro.Transform'},
+    {load_module,'Elixir.Cuatro.Application',[]}]}]}.

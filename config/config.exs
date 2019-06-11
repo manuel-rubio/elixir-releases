@@ -1,8 +1,5 @@
 use Mix.Config
 
-config :cuatro, port: 1234,
-                family: :inet
-
 config :cuatro, ecto_repos: [Cuatro.Repo]
 
 config :ecto_mnesia,
